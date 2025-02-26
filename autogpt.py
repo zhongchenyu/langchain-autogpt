@@ -37,22 +37,16 @@ tools = [
     ReadFileTool(),
 ]
 
-# agent.chat_history_memory = chat_history  # 绑定 chat history
 
 def run_agent(task,history):
 
     chat_history = ChatMessageHistory()
 
-    # import logging
-    #
-    # logging.basicConfig(level=logging.DEBUG)
-    # logging.getLogger("httpx").setLevel(logging.DEBUG)
-
     agent = AutoGPT.from_llm_and_tools(
         ai_name="Jarvis",
         ai_role="Assistant",
         tools=tools,
-        llm=ChatOpenAI( model="gpt-3.5-turbo", temperature=0), # base_url ="https://api.deepseek.com/v1",
+        llm=ChatOpenAI( model="gpt-4o", temperature=0), # base_url ="https://api.deepseek.com/v1",
         memory=vectorstore.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={"score_threshold": 0.8}),  # 实例化 Faiss 的 VectorStoreRetriever
@@ -72,11 +66,9 @@ def run_agent(task,history):
             print('waiting new messages...')
             time.sleep(1)
             continue
-        print(f"total messages: {total_message_count},read messages: {read_message_count}")
         new_message = message_history[read_message_count]
         read_message_count += 1
-        print("new_message:")
-        print(new_message.type, " | " ,new_message.content)
+
         new_message.pretty_print()
         if new_message.type =='human':
             continue
@@ -90,16 +82,14 @@ def run_agent(task,history):
             print('new_message is not JSON')
 
         time.sleep(1)
-        yield all_messages # json.dumps({"type": new_message.type, "content": new_message.content.replace("\n", "")})
-    yield all_messages # json.dumps({"type": new_message.type, "content": new_message.content.replace("\n", "")})
+        yield all_messages
+    yield all_messages
 
 
 def format_to_markdown(json_str):
     """将 JSON 字符串转换为 Markdown 格式。如果输入不是 JSON，保持原样式返回。"""
-    print(f"type of json_str: {type(json_str)}, json_str:\n {json_str}")
     try:
-        data = json.loads(json_str)  # 尝试解析 JSON
-        print(f"json loads result data:\n {data}")
+        data = json.loads(json_str)
     except json.JSONDecodeError as e:
         print('解析失败，返回原始字符串')
         print(e)
@@ -131,46 +121,11 @@ def format_to_markdown(json_str):
             d = json.loads(d)
         except json.JSONDecodeError as e:
             print(e)
-        print(f"d type:{type(d)}, content:{d}")
         result += (format_dict(d) if type(d) is dict else d+"\n")
 
-    print(f"result: {result}")
+    print(f"formate result:\n {result}")
 
     return result
-
-#
-# with gr.Blocks() as iface:
-#     gr.Markdown("# AUTOGPT")
-#
-#
-#     chatbot = gr.Chatbot(height=600)  # 让内容块随时间新增
-#     output_box = gr.Textbox(visible=False)  # 仅用于流式处理
-#     user_input = gr.Textbox(label="请输入你的问题")  # 用户输入框
-#     with gr.Row():  # **让按钮横向排列**
-#         stream_button = gr.Button("提交", variant="primary", elem_classes="gr-yellow")
-#         # stop_button = gr.Button("中止", variant="stop")
-#
-#
-#     def update_chatbot(user_input, ai_output, history):
-#         print(f"ai_output:\n {ai_output}, history:\n {history}")
-#         if user_input:
-#             history.append((user_input, None))  # 用户输入在左侧
-#         if ai_output:
-#             """解析 JSON 并在 Chatbot 里新增一块展示"""
-#             formatted = format_to_markdown(ai_output)
-#             history.append((None, formatted))  # 右侧显示 AI 响应
-#         return history
-#
-#     output_box.change(update_chatbot, inputs=[user_input,output_box, chatbot], outputs=chatbot)
-#     # stream_button = gr.Button("提交")
-#
-#     stream_button.click(
-#         fn=run_agent,
-#         inputs=[user_input],
-#         outputs=output_box
-#     )
-    # stop_button.click(fn=stop_task, outputs=output_box)
-
 
 iface = gr.ChatInterface(
     fn=run_agent,
