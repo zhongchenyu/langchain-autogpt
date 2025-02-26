@@ -11,6 +11,7 @@ import faiss
 from langchain_community.vectorstores import FAISS
 from langchain_community.docstore.in_memory import InMemoryDocstore
 from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain.agents import Tool
 import time
 
 
@@ -27,11 +28,11 @@ vectorstore = FAISS(embeddings_model.embed_query, index, InMemoryDocstore({}), {
 # 构造 AutoGPT 的工具集
 search = SerpAPIWrapper()
 tools = [
-    # Tool(
-    #     name="search",
-    #     func=search.run,
-    #     description="useful for when you need to answer questions about current events. You should ask targeted questions",
-    # ),
+    Tool(
+        name="search",
+        func=search.run,
+        description="useful for when you need to answer questions about current events. You should ask targeted questions",
+    ),
     WriteFileTool(),
     ReadFileTool(),
 ]
